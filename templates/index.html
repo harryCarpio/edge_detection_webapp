@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canny Edge Detection - Flask App</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .container { background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 1200px; width: 100%; padding: 40px; }
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { color: #333; font-size: 2.2em; margin-bottom: 6px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { color: #666; font-size: 1em; }
+        .content { display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 20px; }
+        .section { display:flex; flex-direction: column; }
+        .section h2 { color:#333; margin-bottom: 12px; font-size:1.25em; border-bottom: 3px solid #667eea; padding-bottom:8px; }
+        label { display:block; margin-bottom:8px; color:#333; font-weight:600; }
+        input[type="file"], input[type="text"], input[type="number"] { width:100%; padding:10px; border:2px solid #e0e0e0; border-radius:8px; font-size:1em; }
+        .form-group { margin-bottom:16px; }
+        .divider-line { height:1px; background:#e0e0e0; margin:20px 0; }
+        .info-box { background:#f8f9fa; border-left:4px solid #667eea; padding:12px; border-radius:8px; margin-bottom:12px; }
+        .info-box h3 { color:#667eea; margin-bottom:8px; }
+        .info-box p { color:#666; font-size:0.95em; line-height:1.5; }
+        .btn-primary { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white; border:none; padding:12px 18px; border-radius:8px; cursor:pointer; font-weight:700; }
+        .btn-primary:disabled { opacity:0.6; cursor:not-allowed; }
+        .btn-secondary { background:#f0f0f0; color:#333; border:2px solid #e0e0e0; padding:8px 14px; border-radius:8px; cursor:pointer; }
+
+        /* Tabs */
+        .tabs { display:flex; gap:10px; margin: 12px 0 20px; }
+        .tab-btn { padding:8px 14px; border-radius:8px; border:2px solid transparent; background:#f0f0f0; cursor:pointer; font-weight:600; }
+        .tab-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:#fff; }
+        .tab-panel { display:none; }
+        .tab-panel.active { display:block; }
+
+        .results { margin-top: 20px; display:none; }
+        .results.show { display:block; }
+        .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px; }
+        .gallery-item img { width:100%; display:block; border-radius:8px; }
+        .stats { background:#f8f9fa; padding:10px; border-radius:8px; margin-bottom:12px; }
+        .download-links { display:flex; gap:10px; margin-top:8px; }
+        .download-links a { flex:1; padding:8px; background:#667eea; color:white; text-decoration:none; border-radius:8px; text-align:center; font-weight:600; }
+
+        .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); z-index: 2000; }
+        .modal.show { display:flex; }
+        .modal-content { background:#fff; border-radius:10px; padding:18px; max-width:900px; width:90%; max-height:90%; overflow:auto; position:relative; }
+        .modal-close { position:absolute; top:8px; right:10px; background:transparent; border:none; font-size:1.2em; cursor:pointer; }
+
+        .algorithm-info { background:#f8f9fa; border-left:4px solid #667eea; padding:12px; border-radius:8px; margin-bottom:12px; }
+        .algorithm-info h3 { color:#667eea; margin-bottom:8px; }
+        .info-list { color:#666; font-size:0.95em; line-height:1.6; padding-left:20px; }
+        .info-list li { margin-bottom:8px; }
+
+        .slider-container { display: flex; align-items: center; gap: 10px; }
+        .slider-container input[type="range"] { flex: 1; cursor: pointer; }
+
+        @media (max-width:768px){ .container{padding:20px;} h1{font-size:1.6em;} .content { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Canny Edge Detection</h1>
+            <p class="subtitle">Detección de Bordes con OpenCV y NumPy</p>
+        </header>
+
+        <div style="text-align:center; margin-top:6px;">
+            <button class="btn-secondary" id="openAlgorithmBtn">📘 Detalles del algoritmo</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" id="tabBtnStatic">Imágenes estáticas</button>
+            <button class="tab-btn" id="tabBtnRealtime">Detección en tiempo real</button>
+        </div>
+
+        <div id="tab-static" class="tab-panel active">
+            <div class="content">
+                <!-- Sección de Carga de Imagen -->
+                <div class="section">
+                    <h2>Cargar Imagen</h2>
+
+                    <div class="info-box">
+                        <h3>Canny Edge Detection</h3>
+                        <p>Algoritmo de detección de bordes que utiliza gradientes para identificar cambios significativos de intensidad en la imagen.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="imageInput">Seleccionar Imagen</label>
+                        <input type="file" id="imageInput" accept="image/*" />
+                        <small style="color:#999; display:block; margin-top:6px;">Formatos: PNG, JPG, JPEG, GIF, BMP (máx. 16 MB)</small>
+                    </div>
+
+                    <div id="previewContainer" style="display:none; margin-bottom:12px;">
+                        <label>Vista Previa</label>
+                        <img id="previewImage" style="width:100%; border-radius:8px; margin-top:8px;" />
+                    </div>
+
+                    <div class="divider-line"></div>
+
+                    <h2>Parámetros de Canny</h2>
+                    <div class="form-group">
+                        <label>Umbral 1 (Inferior): <span id="threshold1Value" class="threshold-value">100</span></label>
+                        <div class="slider-container"><input type="range" id="threshold1" min="0" max="500" value="100" /></div>
+                        <small style="color:#999;">Umbral inferior para la detección de bordes (0-500)</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Umbral 2 (Superior): <span id="threshold2Value" class="threshold-value">200</span></label>
+                        <div class="slider-container"><input type="range" id="threshold2" min="0" max="500" value="200" /></div>
+                        <small style="color:#999;">Umbral superior para la detección de bordes (0-500)</small>
+                    </div>
+
+                    <button class="btn-primary" id="processBtn" disabled>⚙️ Procesar Imagen</button>
+                </div>
+            </div>
+
+            <!-- Sección de Resultados -->
+            <div id="resultsSection" class="results">
+                <div id="message" class="message"></div>
+                <div id="loadingSpinner" class="loading" style="display:none; text-align:center; margin:12px 0;">
+                    <div class="spinner" style="width:36px;height:36px;border:4px solid #f3f3f3;border-top:4px solid #667eea;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 8px;"></div>
+                    <p>Procesando imagen...</p>
+                </div>
+
+                <h3>Resultados del Procesamiento</h3>
+                <div class="stats" id="statsContainer"></div>
+                <div class="gallery" id="galleryContainer"></div>
+                <div class="download-links" id="downloadLinks"></div>
+                <button class="btn-secondary" onclick="resetForm()">🔄 Procesar Otra Imagen</button>
+            </div>
+        </div>
+
+        <div id="tab-realtime" class="tab-panel">
+            <div class="section">
+                <h2>Detección en tiempo real</h2>
+                <div class="info-box"><p>Captura video de tu webcam y visualiza la detección de bordes en tiempo real.</p></div>
+                
+                <div class="form-group">
+                    <label>Umbral 1 (Inferior): <span id="realtimeThreshold1Value" class="threshold-value">100</span></label>
+                    <div class="slider-container"><input type="range" id="realtimeThreshold1" min="0" max="500" value="100" /></div>
+                    <small style="color:#999;">Ajusta para ver los cambios en tiempo real</small>
+                </div>
+                <div class="form-group">
+                    <label>Umbral 2 (Superior): <span id="realtimeThreshold2Value" class="threshold-value">200</span></label>
+                    <div class="slider-container"><input type="range" id="realtimeThreshold2" min="0" max="500" value="200" /></div>
+                </div>
+
+                <button class="btn-primary" id="startCameraBtn">🎥 Iniciar Cámara</button>
+                <button class="btn-primary" id="stopCameraBtn" style="display:none; background:#e74c3c;">⛔ Detener Cámara</button>
+
+                <div id="videoContainer" style="display:none; margin-top:20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div>
+                            <h3 style="text-align:center; color:#333; margin-bottom:8px;">Imagen Original</h3>
+                            <video id="webcamVideo" width="100%" style="border-radius:8px; border:2px solid #667eea; background:#000;"></video>
+                        </div>
+                        <div>
+                            <h3 style="text-align:center; color:#333; margin-bottom:8px;">Bordes Detectados</h3>
+                            <canvas id="canvasEdges" width="640" height="480" style="width:100%; border-radius:8px; border:2px solid #764ba2; background:#000;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Algorithm Details -->
+        <div id="algorithmModal" class="modal" aria-hidden="true">
+            <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="algorithmModalTitle">
+                <button class="modal-close" id="closeAlgorithmBtn">✕</button>
+                <h2 id="algorithmModalTitle">🔍 Canny Edge Detection</h2>
+
+                <div class="info-box">
+                    <h3>¿Qué es Canny Edge Detection?</h3>
+                    <p>Canny Edge Detection es un algoritmo popular para detectar bordes en imágenes digitales. Utiliza gradientes para identificar cambios significativos de intensidad y es ampliamente utilizado en visión por computadora.</p>
+                </div>
+
+                <div class="algorithm-info">
+                    <h3>Pasos del Algoritmo</h3>
+                    <ol class="info-list">
+                        <li><strong>Suavizado Gaussiano:</strong> Reduce el ruido aplicando un filtro Gaussiano (5x5, σ=1.5).</li>
+                        <li><strong>Cálculo de Gradientes:</strong> Se calculan las derivadas de la imagen en X e Y.</li>
+                        <li><strong>Supresión de No Máximos:</strong> Adelgaza los bordes manteniendo solo los máximos locales.</li>
+                        <li><strong>Histéresis de Umbral:</strong> Conecta bordes usando dos umbrales (inferior y superior).</li>
+                    </ol>
+                </div>
+
+                <div class="info-box">
+                    <h3>📋 Funcionalidades de la App</h3>
+                    <ul class="info-list" style="margin: 12px 0;">
+                        <li><strong>Imágenes Estáticas:</strong> Carga una imagen, ajusta los umbrales y procesa para obtener bordes detectados con estadísticas detalladas.</li>
+                        <li><strong>Detección en Tiempo Real:</strong> Usa tu webcam para visualizar bordes detectados en vivo con ajuste dinámico de umbrales.</li>
+                    </ul>
+                </div>
+
+                <div class="algorithm-info">
+                    <h3>⚙️ Parámetros Configurables</h3>
+                    <ul class="info-list">
+                        <li><strong>Umbral 1 (Inferior):</strong> Rango 0-500. Bordes débiles se descartan si están por debajo de este valor.</li>
+                        <li><strong>Umbral 2 (Superior):</strong> Rango 0-500. Bordes fuertes se aceptan siempre si están por encima de este valor.</li>
+                        <li><strong>Recomendación:</strong> Threshold1 generalmente es 1/3 de Threshold2 para mejores resultados.</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <h3>💡 Consejos de Uso</h3>
+                    <ul class="info-list" style="margin: 12px 0;">
+                        <li>Valores bajos de umbral detectarán más bordes (incluyendo ruido).</li>
+                        <li>Valores altos de umbral detectarán solo bordes prominentes.</li>
+                        <li>En imágenes con mucho ruido, aumenta el umbral inferior.</li>
+                        <li>Experimenta ajustando los parámetros para obtener los mejores resultados.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        const tabBtnStatic = document.getElementById('tabBtnStatic');
+        const tabBtnRealtime = document.getElementById('tabBtnRealtime');
+        const tabStatic = document.getElementById('tab-static');
+        const tabRealtime = document.getElementById('tab-realtime');
+
+        function setActiveTab(tab) {
+            if (tab === 'static') {
+                tabBtnStatic.classList.add('active'); tabBtnRealtime.classList.remove('active');
+                tabStatic.classList.add('active'); tabRealtime.classList.remove('active');
+            } else {
+                tabBtnRealtime.classList.add('active'); tabBtnStatic.classList.remove('active');
+                tabRealtime.classList.add('active'); tabStatic.classList.remove('active');
+            }
+        }
+
+        tabBtnStatic.addEventListener('click', () => setActiveTab('static'));
+        tabBtnRealtime.addEventListener('click', () => setActiveTab('realtime'));
+
+        // ======================== REALTIME SECTION ========================
+        let realtimeStream = null;
+        let realtimeAnimationId = null;
+        let isRealtimeRunning = false;
+
+        const realtimeThreshold1 = document.getElementById('realtimeThreshold1');
+        const realtimeThreshold2 = document.getElementById('realtimeThreshold2');
+        const realtimeThreshold1Value = document.getElementById('realtimeThreshold1Value');
+        const realtimeThreshold2Value = document.getElementById('realtimeThreshold2Value');
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const stopCameraBtn = document.getElementById('stopCameraBtn');
+        const webcamVideo = document.getElementById('webcamVideo');
+        const canvasEdges = document.getElementById('canvasEdges');
+        const videoContainer = document.getElementById('videoContainer');
+
+        realtimeThreshold1.addEventListener('input', () => {
+            realtimeThreshold1Value.textContent = realtimeThreshold1.value;
+        });
+        realtimeThreshold2.addEventListener('input', () => {
+            realtimeThreshold2Value.textContent = realtimeThreshold2.value;
+        });
+
+        startCameraBtn.addEventListener('click', startRealtime);
+        stopCameraBtn.addEventListener('click', stopRealtime);
+
+        async function startRealtime() {
+            try {
+                realtimeStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: { ideal: 640 }, height: { ideal: 480 } },
+                    audio: false 
+                });
+                webcamVideo.srcObject = realtimeStream;
+                webcamVideo.onloadedmetadata = () => {
+                    webcamVideo.play();
+                    isRealtimeRunning = true;
+                    videoContainer.style.display = 'block';
+                    startCameraBtn.style.display = 'none';
+                    stopCameraBtn.style.display = 'inline-block';
+                    processRealtimeFrame();
+                };
+            } catch (err) {
+                showMessage(`Error accediendo a la cámara: ${err.message}`, 'error');
+            }
+        }
+
+        function stopRealtime() {
+            isRealtimeRunning = false;
+            if (realtimeStream) {
+                realtimeStream.getTracks().forEach(track => track.stop());
+            }
+            if (realtimeAnimationId) {
+                cancelAnimationFrame(realtimeAnimationId);
+            }
+            videoContainer.style.display = 'none';
+            startCameraBtn.style.display = 'inline-block';
+            stopCameraBtn.style.display = 'none';
+        }
+
+        function processRealtimeFrame() {
+            if (!isRealtimeRunning) return;
+
+            try {
+                const ctx = canvasEdges.getContext('2d');
+                
+                // Obtener dimensiones del video
+                const videoWidth = webcamVideo.videoWidth || 640;
+                const videoHeight = webcamVideo.videoHeight || 480;
+                
+                // Asegurar que el canvas tiene el tamaño correcto
+                if (canvasEdges.width !== videoWidth || canvasEdges.height !== videoHeight) {
+                    canvasEdges.width = videoWidth;
+                    canvasEdges.height = videoHeight;
+                }
+                
+                // Crear canvas temporal con el frame actual
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = videoWidth;
+                tempCanvas.height = videoHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(webcamVideo, 0, 0, videoWidth, videoHeight);
+
+                // Obtener parámetros de umbrales
+                const threshold1 = parseInt(realtimeThreshold1.value);
+                const threshold2 = parseInt(realtimeThreshold2.value);
+                
+                // Enviar frame al servidor
+                tempCanvas.toBlob(blob => {
+                    const formData = new FormData();
+                    formData.append('frame', blob);
+                    formData.append('threshold1', threshold1);
+                    formData.append('threshold2', threshold2);
+                    formData.append('width', videoWidth);
+                    formData.append('height', videoHeight);
+
+                    fetch('/api/process-realtime', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.edges_data) {
+                            // Crear imagen y dibujar en canvas
+                            const img = new Image();
+                            img.onload = () => {
+                                ctx.clearRect(0, 0, canvasEdges.width, canvasEdges.height);
+                                ctx.drawImage(img, 0, 0);
+                            };
+                            img.onerror = () => {
+                                console.error('Error cargando imagen de bordes');
+                            };
+                            img.src = data.edges_data;
+                        }
+                    })
+                    .catch(err => console.error('Error procesando frame:', err));
+                }, 'image/jpeg', 0.8);
+            } catch (err) {
+                console.error('Error en processRealtimeFrame:', err);
+            }
+
+            // Continuar con el siguiente frame
+            if (isRealtimeRunning) {
+                realtimeAnimationId = setTimeout(() => processRealtimeFrame(), 100);
+            }
+        }
+
+        // ======================== STATIC SECTION ========================
+
+        // Existing UI logic
+        let currentImageFile = null;
+        let currentResults = null;
+
+        document.getElementById('imageInput').addEventListener('change', handleImageSelect);
+        document.getElementById('threshold1').addEventListener('input', updateThreshold1Value);
+        document.getElementById('threshold2').addEventListener('input', updateThreshold2Value);
+        document.getElementById('processBtn').addEventListener('click', processImage);
+
+        // Modal listeners
+        document.getElementById('openAlgorithmBtn').addEventListener('click', openAlgorithmModal);
+        document.getElementById('closeAlgorithmBtn').addEventListener('click', closeAlgorithmModal);
+        document.getElementById('algorithmModal').addEventListener('click', function(e){ if(e.target.id === 'algorithmModal') closeAlgorithmModal(); });
+
+        function openAlgorithmModal(){ const m = document.getElementById('algorithmModal'); m.classList.add('show'); m.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; }
+        function closeAlgorithmModal(){ const m = document.getElementById('algorithmModal'); m.classList.remove('show'); m.setAttribute('aria-hidden','true'); document.body.style.overflow='auto'; }
+
+        function handleImageSelect(event){ const file = event.target.files[0]; if(!file) return; currentImageFile = file; const reader = new FileReader(); reader.onload = (e)=>{ document.getElementById('previewImage').src = e.target.result; document.getElementById('previewContainer').style.display='block'; }; reader.readAsDataURL(file); document.getElementById('processBtn').disabled=false; }
+
+        function updateThreshold1Value(){ document.getElementById('threshold1Value').textContent = document.getElementById('threshold1').value; }
+        function updateThreshold2Value(){ document.getElementById('threshold2Value').textContent = document.getElementById('threshold2').value; }
+
+        function showMessage(message, type){ const messageEl = document.getElementById('message'); messageEl.textContent = message; messageEl.className = `message show ${type}`; if(type==='success'){ setTimeout(()=>{ messageEl.classList.remove('show'); },5000); } }
+        function showLoading(show){ const loadingEl = document.getElementById('loadingSpinner'); if(show) loadingEl.style.display='block'; else loadingEl.style.display='none'; }
+
+        async function processImage(){ if(!currentImageFile){ showMessage('Por favor selecciona una imagen','error'); return; } const threshold1 = document.getElementById('threshold1').value; const threshold2 = document.getElementById('threshold2').value; if(parseInt(threshold1) >= parseInt(threshold2)){ showMessage('El Umbral 1 debe ser menor que el Umbral 2','error'); return; } const formData = new FormData(); formData.append('file', currentImageFile); formData.append('threshold1', threshold1); formData.append('threshold2', threshold2); showLoading(true); document.getElementById('processBtn').disabled = true; try{ const response = await fetch('/api/process',{ method:'POST', body: formData }); const data = await response.json(); if(data.success){ currentResults = data; displayResults(data); showMessage('¡Imagen procesada correctamente!','success'); document.getElementById('resultsSection').classList.add('show'); } else { showMessage(data.message || 'Error procesando la imagen','error'); } } catch(err){ showMessage(`Error: ${err.message}`,'error'); } finally{ showLoading(false); document.getElementById('processBtn').disabled = false; } }
+
+        function displayResults(data){ const statsHtml = `
+            <div class="stat-row"><span class="stat-label">Dimensiones:</span><span class="stat-value">${data.image_width}x${data.image_height} px</span></div>
+            <div class="stat-row"><span class="stat-label">Porcentaje de Bordes:</span><span class="stat-value">${data.edge_percentage}%</span></div>
+            <div class="stat-row"><span class="stat-label">Umbral 1:</span><span class="stat-value">${document.getElementById('threshold1').value}</span></div>
+            <div class="stat-row"><span class="stat-label">Umbral 2:</span><span class="stat-value">${document.getElementById('threshold2').value}</span></div>
+        `; document.getElementById('statsContainer').innerHTML = statsHtml; const normalize = (p) => p ? p.replace(/\\/g, '/') : ''; const originalSrc = data.result_image_base64 ? data.result_image_base64 : (data.original_image ? normalize(data.original_image) : ''); const resultSrc = data.result_image_base64 ? data.result_image_base64 : (data.result_image ? normalize(data.result_image) : ''); const edgesSrc = data.edges_image_base64 ? data.edges_image_base64 : (data.edges_image ? normalize(data.edges_image) : ''); const galleryHtml = `
+            <div class="gallery-item"><img src="${originalSrc}" alt="Original"><p style="text-align:center;padding:8px;background:#f8f9fa;">Original</p></div>
+            <div class="gallery-item"><img src="${resultSrc}" alt="Comparativa"><p style="text-align:center;padding:8px;background:#f8f9fa;">Comparativa</p></div>
+            <div class="gallery-item"><img src="${edgesSrc}" alt="Bordes"><p style="text-align:center;padding:8px;background:#f8f9fa;">Bordes Detectados</p></div>
+        `; document.getElementById('galleryContainer').innerHTML = galleryHtml; const downloadResultHref = data.result_image_base64 ? data.result_image_base64 : normalize(data.result_image); const downloadEdgesHref = data.edges_image_base64 ? data.edges_image_base64 : normalize(data.edges_image); const downloadHtml = `<a href="${downloadResultHref}" download="resultado_deteccion.png">📥 Descargar Comparativa</a><a href="${downloadEdgesHref}" download="bordes_detectados.png">📥 Descargar Bordes</a>`; document.getElementById('downloadLinks').innerHTML = downloadHtml; }
+
+        function resetForm(){ document.getElementById('imageInput').value=''; document.getElementById('previewContainer').style.display='none'; document.getElementById('resultsSection').classList.remove('show'); document.getElementById('processBtn').disabled=true; currentImageFile=null; currentResults=null; }
+
+    </script>
+</body>
+</html>
