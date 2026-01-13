@@ -40,7 +40,7 @@ echo OK
 
 REM Instalar dependencias
 echo [3/3] Instalando dependencias...
-"%cd%\venv\Scripts\pip.exe" install -r requirements.txt
+python -m pip install -r requirements.txt
 if errorlevel 1 (
     echo ERROR: No se pudieron instalar las dependencias
     echo.
