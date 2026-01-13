@@ -126,7 +126,7 @@ El algoritmo Canny es un detector de bordes multi-etapa ampliamente utilizado:
 ## 📁 Estructura del Proyecto
 
 ```
-BorderDetectionApp/
+edge_detection_webapp/
 │
 ├── app.py                          # Aplicación principal Flask
 ├── requirements.txt                # Dependencias de Python
