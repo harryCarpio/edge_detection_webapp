@@ -276,23 +276,9 @@ Desarrollado como práctica de Visión por Computadora en MIAA.
 - [Flask Documentation](https://flask.palletsprojects.com/)
 - [NumPy Documentation](https://numpy.org/doc/)
 
-## 🤝 Contribuciones
-
-Las contribuciones son bienvenidas. Por favor:
-
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
-## 📞 Soporte
-
-Para reportar problemas o sugerencias, por favor abre un issue en el repositorio.
-
 ---
 
-**Nota**: Esta aplicación está diseñada con fines educativos. Para uso en producción, considera implementar:
+**Nota**: Esta aplicación está diseñada con fines didácticos. Para usar en producción se debe considerar implementar:
 - Autenticación y autorización
 - Validación más estricta de archivos
 - Límites de rate limiting
