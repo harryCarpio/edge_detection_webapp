@@ -24,7 +24,6 @@ Una aplicación web desarrollada con Flask que implementa el **algoritmo Canny E
 | **Flask** | 3.0.0 | Framework web |
 | **OpenCV** | 4.8.1 | Procesamiento de imágenes |
 | **NumPy** | 2.4.1 | Operaciones numéricas |
-| **Matplotlib** | 3.8.2 | Visualización de resultados |
 
 ## 📋 Requisitos Previos
 
@@ -276,7 +275,6 @@ Desarrollado como práctica de Visión por Computadora en MIAA.
 - [Canny Edge Detection - Wikipedia](https://en.wikipedia.org/wiki/Canny_edge_detector)
 - [Flask Documentation](https://flask.palletsprojects.com/)
 - [NumPy Documentation](https://numpy.org/doc/)
-- [Matplotlib Documentation](https://matplotlib.org/)
 
 ## 🤝 Contribuciones
 
