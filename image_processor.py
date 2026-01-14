@@ -14,18 +14,24 @@ from typing import Tuple
 RESULT_FOLDER = 'static/results'
 
 
-def apply_canny_edge_detection(image_path: str, threshold1: int = 100, threshold2: int = 200) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def apply_canny_edge_detection(image_path: str, threshold1: int = 100, threshold2: int = 200, seed: int = 0) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Aplica el algoritmo Canny Edge Detection a una imagen
     
     Args:
         image_path: Ruta de la imagen
-        threshold1: Umbral inferior para la detección de bordes
-        threshold2: Umbral superior para la detección de bordes
+        threshold1: Umbral Bajo para la detección de bordes
+        threshold2: Umbral Alto para la detección de bordes
+        seed: Semilla para operaciones aleatorias (0 significa sin semilla)
     
     Returns:
         Tupla con (imagen_original, imagen_gris, imagen_bordes)
     """
+    # Establecer semilla si es diferente de 0
+    if seed > 0:
+        np.random.seed(seed)
+        cv2.setRNGSeed(seed)
+    
     # Cargar la imagen
     original_image = cv2.imread(image_path)
     
@@ -133,8 +139,8 @@ def process_realtime_frame(frame_data: bytes, width: int, height: int, threshold
         frame_data: Datos de la imagen en bytes
         width: Ancho del frame
         height: Alto del frame
-        threshold1: Umbral inferior
-        threshold2: Umbral superior
+        threshold1: Umbral Bajo
+        threshold2: Umbral Alto
     
     Returns:
         Imagen de bordes en formato BGR
@@ -190,8 +196,8 @@ def process_image_from_url(image_url: str, threshold1: int = 100, threshold2: in
     
     Args:
         image_url: URL de la imagen
-        threshold1: Umbral inferior para Canny
-        threshold2: Umbral superior para Canny
+        threshold1: Umbral Bajo para Canny
+        threshold2: Umbral Alto para Canny
     
     Returns:
         Tupla con (imagen_original, imagen_gris, imagen_bordes)

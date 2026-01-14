@@ -70,13 +70,14 @@ def register_routes():
             if not allowed_file(file.filename):
                 return jsonify({'success': False, 'message': 'Tipo de archivo no permitido. Use: PNG, JPG, JPEG, GIF, BMP'}), 400
             
-            # Obtener los parámetros del umbral
-            threshold1 = int(request.form.get('threshold1', 100))
-            threshold2 = int(request.form.get('threshold2', 200))
+            # Obtener los parámetros del umbral y semilla
+            threshold1 = int(request.form.get('thresholdLow', 100))
+            threshold2 = int(request.form.get('thresholdHigh', 200))
+            seed = int(request.form.get('seed', 0))
             
             # Validar rangos
             if threshold1 < 0 or threshold2 < 0 or threshold1 >= threshold2:
-                return jsonify({'success': False, 'message': 'Umbrales inválidos. threshold1 debe ser menor que threshold2'}), 400
+                return jsonify({'success': False, 'message': 'Umbrales inválidos. Umbral Bajo debe ser menor que Umbral Alto'}), 400
             
             # Guardar el archivo subido
             filename = secure_filename(file.filename)
@@ -90,7 +91,8 @@ def register_routes():
             original_image, gray_image, edges = apply_canny_edge_detection(
                 upload_path, 
                 threshold1=threshold1, 
-                threshold2=threshold2
+                threshold2=threshold2,
+                seed=seed
             )
             print("✅ Imagen procesada con éxito")
             
@@ -187,8 +189,8 @@ def register_routes():
             frame_file = request.files['frame']
             width = int(request.form.get('width', 640))
             height = int(request.form.get('height', 480))
-            threshold1 = int(request.form.get('threshold1', 100))
-            threshold2 = int(request.form.get('threshold2', 200))
+            threshold1 = int(request.form.get('thresholdLow', 100))
+            threshold2 = int(request.form.get('thresholdHigh', 200))
             
             # Leer datos del frame
             frame_data = frame_file.read()

@@ -53,6 +53,13 @@
         .slider-container { display: flex; align-items: center; gap: 10px; }
         .slider-container input[type="range"] { flex: 1; cursor: pointer; }
 
+        .toggle-container { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .toggle-switch { position: relative; width: 50px; height: 28px; background: #ccc; border-radius: 14px; cursor: pointer; transition: background 0.3s; }
+        .toggle-switch.active { background: #667eea; }
+        .toggle-slider { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; background: white; border-radius: 50%; transition: left 0.3s; }
+        .toggle-switch.active .toggle-slider { left: 25px; }
+        .toggle-label { font-weight: 600; color: #333; }
+
         @media (max-width:768px){ .container{padding:20px;} h1{font-size:1.6em;} .content { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -97,18 +104,45 @@
                     <div class="divider-line"></div>
 
                     <h2>Parámetros de Canny</h2>
-                    <div class="form-group">
-                        <label>Umbral 1 (Inferior): <span id="threshold1Value" class="threshold-value">100</span></label>
-                        <div class="slider-container"><input type="range" id="threshold1" min="0" max="500" value="100" /></div>
-                        <small style="color:#999;">Umbral inferior para la detección de bordes (0-500)</small>
-                    </div>
-                    <div class="form-group">
-                        <label>Umbral 2 (Superior): <span id="threshold2Value" class="threshold-value">200</span></label>
-                        <div class="slider-container"><input type="range" id="threshold2" min="0" max="500" value="200" /></div>
-                        <small style="color:#999;">Umbral superior para la detección de bordes (0-500)</small>
+                    <div class="toggle-container">
+                        <span class="toggle-label">Usar Semilla:</span>
+                        <div class="toggle-switch" id="seedToggle">
+                            <div class="toggle-slider"></div>
+                        </div>
                     </div>
 
-                    <button class="btn-primary" id="processBtn" disabled>⚙️ Procesar Imagen</button>
+                    <div class="form-group" id="seedGroup" style="display:none;">
+                        <label>Semilla: <span id="seedValue" class="threshold-value">0</span></label>
+                        <div class="slider-container"><input type="range" id="seed" min="0" max="1000" value="0" disabled /></div>
+                        <small style="color:#999;">Ajusta la semilla aleatoria para variar resultados de procesamiento (0-1000)</small>
+                        
+                        <div style="margin-top: 12px; padding: 10px; background: #f0f7ff; border-radius: 6px; border-left: 3px solid #667eea;">
+                            <p style="color: #333; font-size: 0.9em; margin-bottom: 8px;"><strong>Umbrales Calculados:</strong></p>
+                            <div class="form-group" style="margin-bottom: 8px;">
+                                <label>Umbral Bajo: <span id="calculatedThresholdLowValue" class="threshold-value">100</span></label>
+                                <small style="color:#999; display:block;">Calculado automáticamente desde la semilla</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Umbral Alto: <span id="calculatedThresholdHighValue" class="threshold-value">200</span></label>
+                                <small style="color:#999;">Calculado automáticamente desde la semilla</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="thresholdsGroup">
+                        <div class="form-group">
+                            <label>Umbral Bajo: <span id="thresholdLowValue" class="threshold-value">100</span></label>
+                            <div class="slider-container"><input type="range" id="thresholdLow" min="0" max="500" value="100" /></div>
+                            <small style="color:#999;">Umbral bajo para la detección de bordes (0-500)</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Umbral Alto: <span id="thresholdHighValue" class="threshold-value">200</span></label>
+                            <div class="slider-container"><input type="range" id="thresholdHigh" min="0" max="500" value="200" /></div>
+                            <small style="color:#999;">Umbral alto para la detección de bordes (0-500)</small>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" id="processBtn">⚙️ Procesar Imagen</button>
                 </div>
             </div>
 
@@ -134,13 +168,13 @@
                 <div class="info-box"><p>Captura video de tu webcam y visualiza la detección de bordes en tiempo real.</p></div>
                 
                 <div class="form-group">
-                    <label>Umbral 1 (Inferior): <span id="realtimeThreshold1Value" class="threshold-value">100</span></label>
-                    <div class="slider-container"><input type="range" id="realtimeThreshold1" min="0" max="500" value="100" /></div>
+                    <label>Umbral Bajo: <span id="realtimeThresholdLowValue" class="threshold-value">100</span></label>
+                    <div class="slider-container"><input type="range" id="realtimeThresholdLow" min="0" max="500" value="100" /></div>
                     <small style="color:#999;">Ajusta para ver los cambios en tiempo real</small>
                 </div>
                 <div class="form-group">
-                    <label>Umbral 2 (Superior): <span id="realtimeThreshold2Value" class="threshold-value">200</span></label>
-                    <div class="slider-container"><input type="range" id="realtimeThreshold2" min="0" max="500" value="200" /></div>
+                    <label>Umbral Alto: <span id="realtimeThresholdHighValue" class="threshold-value">200</span></label>
+                    <div class="slider-container"><input type="range" id="realtimeThresholdHigh" min="0" max="500" value="200" /></div>
                 </div>
 
                 <button class="btn-primary" id="startCameraBtn">🎥 Iniciar Cámara</button>
@@ -193,9 +227,9 @@
                 <div class="algorithm-info">
                     <h3>⚙️ Parámetros Configurables</h3>
                     <ul class="info-list">
-                        <li><strong>Umbral 1 (Inferior):</strong> Rango 0-500. Bordes débiles se descartan si están por debajo de este valor.</li>
-                        <li><strong>Umbral 2 (Superior):</strong> Rango 0-500. Bordes fuertes se aceptan siempre si están por encima de este valor.</li>
-                        <li><strong>Recomendación:</strong> Threshold1 generalmente es 1/3 de Threshold2 para mejores resultados.</li>
+                        <li><strong>Umbral Bajo:</strong> Rango 0-500. Bordes débiles se descartan si están por debajo de este valor.</li>
+                        <li><strong>Umbral Alto:</strong> Rango 0-500. Bordes fuertes se aceptan siempre si están por encima de este valor.</li>
+                        <li><strong>Recomendación:</strong> Umbral Bajo generalmente es 1/3 de Umbral Alto para mejores resultados.</li>
                     </ul>
                 </div>
 
@@ -237,10 +271,10 @@
         let realtimeAnimationId = null;
         let isRealtimeRunning = false;
 
-        const realtimeThreshold1 = document.getElementById('realtimeThreshold1');
-        const realtimeThreshold2 = document.getElementById('realtimeThreshold2');
-        const realtimeThreshold1Value = document.getElementById('realtimeThreshold1Value');
-        const realtimeThreshold2Value = document.getElementById('realtimeThreshold2Value');
+        const realtimeThreshold1 = document.getElementById('realtimeThresholdLow');
+        const realtimeThreshold2 = document.getElementById('realtimeThresholdHigh');
+        const realtimeThreshold1Value = document.getElementById('realtimeThresholdLowValue');
+        const realtimeThreshold2Value = document.getElementById('realtimeThresholdHighValue');
         const startCameraBtn = document.getElementById('startCameraBtn');
         const stopCameraBtn = document.getElementById('stopCameraBtn');
         const webcamVideo = document.getElementById('webcamVideo');
@@ -321,8 +355,8 @@
                 tempCanvas.toBlob(blob => {
                     const formData = new FormData();
                     formData.append('frame', blob);
-                    formData.append('threshold1', threshold1);
-                    formData.append('threshold2', threshold2);
+                    formData.append('thresholdLow', threshold1);
+                    formData.append('thresholdHigh', threshold2);
                     formData.append('width', videoWidth);
                     formData.append('height', videoHeight);
 
@@ -359,13 +393,34 @@
 
         // ======================== STATIC SECTION ========================
 
+        // Seeded random number generator (deterministic)
+        function seededRandom(seed) {
+            const x = Math.sin(seed) * 10000;
+            return x - Math.floor(x);
+        }
+
+        function calculateThresholdsFromSeed(seed) {
+            // Genera valores determinísticos basados en la semilla
+            // Umbral Bajo: rango 30-150
+            // Umbral Alto: rango 80-300
+            const seed1 = seededRandom(seed);
+            const seed2 = seededRandom(seed + 1000);
+            
+            const thresholdLow = Math.floor(30 + (seed1 * 120));
+            const thresholdHigh = Math.floor(80 + (seed2 * 220));
+            
+            return { low: thresholdLow, high: thresholdHigh };
+        }
+
         // Existing UI logic
         let currentImageFile = null;
         let currentResults = null;
 
         document.getElementById('imageInput').addEventListener('change', handleImageSelect);
-        document.getElementById('threshold1').addEventListener('input', updateThreshold1Value);
-        document.getElementById('threshold2').addEventListener('input', updateThreshold2Value);
+        document.getElementById('thresholdLow').addEventListener('input', updateThresholdLowValue);
+        document.getElementById('thresholdHigh').addEventListener('input', updateThresholdHighValue);
+        document.getElementById('seed').addEventListener('input', updateSeedValue);
+        document.getElementById('seedToggle').addEventListener('click', toggleSeedMode);
         document.getElementById('processBtn').addEventListener('click', processImage);
 
         // Modal listeners
@@ -376,28 +431,169 @@
         function openAlgorithmModal(){ const m = document.getElementById('algorithmModal'); m.classList.add('show'); m.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; }
         function closeAlgorithmModal(){ const m = document.getElementById('algorithmModal'); m.classList.remove('show'); m.setAttribute('aria-hidden','true'); document.body.style.overflow='auto'; }
 
-        function handleImageSelect(event){ const file = event.target.files[0]; if(!file) return; currentImageFile = file; const reader = new FileReader(); reader.onload = (e)=>{ document.getElementById('previewImage').src = e.target.result; document.getElementById('previewContainer').style.display='block'; }; reader.readAsDataURL(file); document.getElementById('processBtn').disabled=false; }
+        function handleImageSelect(event){ const file = event.target.files[0]; if(!file) return; currentImageFile = file; const reader = new FileReader(); reader.onload = (e)=>{ document.getElementById('previewImage').src = e.target.result; document.getElementById('previewContainer').style.display='block'; }; reader.readAsDataURL(file); }
 
-        function updateThreshold1Value(){ document.getElementById('threshold1Value').textContent = document.getElementById('threshold1').value; }
-        function updateThreshold2Value(){ document.getElementById('threshold2Value').textContent = document.getElementById('threshold2').value; }
+        function updateThresholdLowValue(){ document.getElementById('thresholdLowValue').textContent = document.getElementById('thresholdLow').value; }
+        function updateThresholdHighValue(){ document.getElementById('thresholdHighValue').textContent = document.getElementById('thresholdHigh').value; }
+        function updateSeedValue(){ 
+            const seedValue = document.getElementById('seed').value;
+            document.getElementById('seedValue').textContent = seedValue;
+            
+            // Calcular y mostrar los umbrales basados en la semilla
+            const thresholds = calculateThresholdsFromSeed(parseInt(seedValue));
+            document.getElementById('calculatedThresholdLowValue').textContent = thresholds.low;
+            document.getElementById('calculatedThresholdHighValue').textContent = thresholds.high;
+        }
+
+        function toggleSeedMode(){
+            const toggle = document.getElementById('seedToggle');
+            const seedGroup = document.getElementById('seedGroup');
+            const thresholdsGroup = document.getElementById('thresholdsGroup');
+            const thresholdLow = document.getElementById('thresholdLow');
+            const thresholdHigh = document.getElementById('thresholdHigh');
+            const seed = document.getElementById('seed');
+            
+            toggle.classList.toggle('active');
+            const isActive = toggle.classList.contains('active');
+            
+            if(isActive){
+                // Activar semilla, deshabilitar umbrales
+                seedGroup.style.display = 'block';
+                thresholdsGroup.style.display = 'none';
+                seed.disabled = false;
+                thresholdLow.disabled = true;
+                thresholdHigh.disabled = true;
+            } else {
+                // Desactivar semilla, habilitar umbrales
+                seedGroup.style.display = 'none';
+                thresholdsGroup.style.display = 'block';
+                seed.disabled = true;
+                thresholdLow.disabled = false;
+                thresholdHigh.disabled = false;
+            }
+        }
 
         function showMessage(message, type){ const messageEl = document.getElementById('message'); messageEl.textContent = message; messageEl.className = `message show ${type}`; if(type==='success'){ setTimeout(()=>{ messageEl.classList.remove('show'); },5000); } }
         function showLoading(show){ const loadingEl = document.getElementById('loadingSpinner'); if(show) loadingEl.style.display='block'; else loadingEl.style.display='none'; }
 
-        async function processImage(){ if(!currentImageFile){ showMessage('Por favor selecciona una imagen','error'); return; } const threshold1 = document.getElementById('threshold1').value; const threshold2 = document.getElementById('threshold2').value; if(parseInt(threshold1) >= parseInt(threshold2)){ showMessage('El Umbral 1 debe ser menor que el Umbral 2','error'); return; } const formData = new FormData(); formData.append('file', currentImageFile); formData.append('threshold1', threshold1); formData.append('threshold2', threshold2); showLoading(true); document.getElementById('processBtn').disabled = true; try{ const response = await fetch('/api/process',{ method:'POST', body: formData }); const data = await response.json(); if(data.success){ currentResults = data; displayResults(data); showMessage('¡Imagen procesada correctamente!','success'); document.getElementById('resultsSection').classList.add('show'); } else { showMessage(data.message || 'Error procesando la imagen','error'); } } catch(err){ showMessage(`Error: ${err.message}`,'error'); } finally{ showLoading(false); document.getElementById('processBtn').disabled = false; } }
+        async function processImage() {
+            console.log('processImage called');
+            if (!currentImageFile) {
+                console.log('No image file selected');
+                showMessage('Por favor selecciona una imagen', 'error');
+                return;
+            }
 
-        function displayResults(data){ const statsHtml = `
-            <div class="stat-row"><span class="stat-label">Dimensiones:</span><span class="stat-value">${data.image_width}x${data.image_height} px</span></div>
-            <div class="stat-row"><span class="stat-label">Porcentaje de Bordes:</span><span class="stat-value">${data.edge_percentage}%</span></div>
-            <div class="stat-row"><span class="stat-label">Umbral 1:</span><span class="stat-value">${document.getElementById('threshold1').value}</span></div>
-            <div class="stat-row"><span class="stat-label">Umbral 2:</span><span class="stat-value">${document.getElementById('threshold2').value}</span></div>
-        `; document.getElementById('statsContainer').innerHTML = statsHtml; const normalize = (p) => p ? p.replace(/\\/g, '/') : ''; const originalSrc = data.result_image_base64 ? data.result_image_base64 : (data.original_image ? normalize(data.original_image) : ''); const resultSrc = data.result_image_base64 ? data.result_image_base64 : (data.result_image ? normalize(data.result_image) : ''); const edgesSrc = data.edges_image_base64 ? data.edges_image_base64 : (data.edges_image ? normalize(data.edges_image) : ''); const galleryHtml = `
-            <div class="gallery-item"><img src="${originalSrc}" alt="Original"><p style="text-align:center;padding:8px;background:#f8f9fa;">Original</p></div>
-            <div class="gallery-item"><img src="${resultSrc}" alt="Comparativa"><p style="text-align:center;padding:8px;background:#f8f9fa;">Comparativa</p></div>
-            <div class="gallery-item"><img src="${edgesSrc}" alt="Bordes"><p style="text-align:center;padding:8px;background:#f8f9fa;">Bordes Detectados</p></div>
-        `; document.getElementById('galleryContainer').innerHTML = galleryHtml; const downloadResultHref = data.result_image_base64 ? data.result_image_base64 : normalize(data.result_image); const downloadEdgesHref = data.edges_image_base64 ? data.edges_image_base64 : normalize(data.edges_image); const downloadHtml = `<a href="${downloadResultHref}" download="resultado_deteccion.png">📥 Descargar Comparativa</a><a href="${downloadEdgesHref}" download="bordes_detectados.png">📥 Descargar Bordes</a>`; document.getElementById('downloadLinks').innerHTML = downloadHtml; }
+            const toggle = document.getElementById('seedToggle');
+            const isUsingSeed = toggle.classList.contains('active');
+            let thresholdLow, thresholdHigh, seed;
 
-        function resetForm(){ document.getElementById('imageInput').value=''; document.getElementById('previewContainer').style.display='none'; document.getElementById('resultsSection').classList.remove('show'); document.getElementById('processBtn').disabled=true; currentImageFile=null; currentResults=null; }
+            if (isUsingSeed) {
+                seed = parseInt(document.getElementById('seed').value);
+                const thresholds = calculateThresholdsFromSeed(seed);
+                thresholdLow = thresholds.low;
+                thresholdHigh = thresholds.high;
+                console.log('Using seed mode:', { seed, thresholdLow, thresholdHigh });
+            } else {
+                thresholdLow = parseInt(document.getElementById('thresholdLow').value);
+                thresholdHigh = parseInt(document.getElementById('thresholdHigh').value);
+                seed = 0;
+                console.log('Using threshold mode:', { thresholdLow, thresholdHigh });
+                if (thresholdLow >= thresholdHigh) {
+                    showMessage('El Umbral Bajo debe ser menor que el Umbral Alto', 'error');
+                    return;
+                }
+            }
+
+            const formData = new FormData();
+            formData.append('file', currentImageFile);
+            formData.append('thresholdLow', thresholdLow);
+            formData.append('thresholdHigh', thresholdHigh);
+            formData.append('seed', seed);
+
+            console.log('Sending request to /api/process with:', { thresholdLow, thresholdHigh, seed });
+
+            showLoading(true);
+            document.getElementById('processBtn').disabled = true;
+
+            try {
+                const response = await fetch('/api/process', {
+                    method: 'POST',
+                    body: formData
+                });
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.success) {
+                    currentResults = data;
+                    displayResults(data);
+                    showMessage('¡Imagen procesada correctamente!', 'success');
+                    document.getElementById('resultsSection').classList.add('show');
+                } else {
+                    showMessage(data.message || 'Error procesando la imagen', 'error');
+                }
+            } catch (err) {
+                console.error('Fetch error:', err);
+                showMessage(`Error: ${err.message}`, 'error');
+            } finally {
+                showLoading(false);
+                document.getElementById('processBtn').disabled = false;
+            }
+        }
+
+        function displayResults(data) {
+            const toggle = document.getElementById('seedToggle');
+            const isUsingSeed = toggle.classList.contains('active');
+
+            // Crear estadísticas
+            let statsHtml = `
+                <div class="stat-row"><span class="stat-label">Dimensiones:</span><span class="stat-value">${data.image_width}x${data.image_height} px</span></div>
+                <div class="stat-row"><span class="stat-label">Porcentaje de Bordes:</span><span class="stat-value">${data.edge_percentage}%</span></div>
+            `;
+
+            if (isUsingSeed) {
+                statsHtml += `<div class="stat-row"><span class="stat-label">Semilla:</span><span class="stat-value">${document.getElementById('seed').value}</span></div>`;
+                statsHtml += `<div class="stat-row"><span class="stat-label">Umbral Bajo (calculado):</span><span class="stat-value">${document.getElementById('calculatedThresholdLowValue').textContent}</span></div>`;
+                statsHtml += `<div class="stat-row"><span class="stat-label">Umbral Alto (calculado):</span><span class="stat-value">${document.getElementById('calculatedThresholdHighValue').textContent}</span></div>`;
+            } else {
+                statsHtml += `<div class="stat-row"><span class="stat-label">Umbral Bajo:</span><span class="stat-value">${document.getElementById('thresholdLow').value}</span></div>`;
+                statsHtml += `<div class="stat-row"><span class="stat-label">Umbral Alto:</span><span class="stat-value">${document.getElementById('thresholdHigh').value}</span></div>`;
+            }
+
+            document.getElementById('statsContainer').innerHTML = statsHtml;
+
+            // Preparar URLs de imágenes
+            const normalize = (p) => p ? p.replace(/\\/g, '/') : '';
+            const originalSrc = data.result_image_base64 ? data.result_image_base64 : (data.original_image ? normalize(data.original_image) : '');
+            const resultSrc = data.result_image_base64 ? data.result_image_base64 : (data.result_image ? normalize(data.result_image) : '');
+            const edgesSrc = data.edges_image_base64 ? data.edges_image_base64 : (data.edges_image ? normalize(data.edges_image) : '');
+
+            // Crear galería
+            const galleryHtml = `
+                <div class="gallery-item"><img src="${originalSrc}" alt="Original"><p style="text-align:center;padding:8px;background:#f8f9fa;">Original</p></div>
+                <div class="gallery-item"><img src="${resultSrc}" alt="Comparativa"><p style="text-align:center;padding:8px;background:#f8f9fa;">Comparativa</p></div>
+                <div class="gallery-item"><img src="${edgesSrc}" alt="Bordes"><p style="text-align:center;padding:8px;background:#f8f9fa;">Bordes Detectados</p></div>
+            `;
+            document.getElementById('galleryContainer').innerHTML = galleryHtml;
+
+            // Enlaces de descarga
+            const downloadResultHref = data.result_image_base64 ? data.result_image_base64 : normalize(data.result_image);
+            const downloadEdgesHref = data.edges_image_base64 ? data.edges_image_base64 : normalize(data.edges_image);
+            const downloadHtml = `
+                <a href="${downloadResultHref}" download="resultado_deteccion.png">📥 Descargar Comparativa</a>
+                <a href="${downloadEdgesHref}" download="bordes_detectados.png">📥 Descargar Bordes</a>
+            `;
+            document.getElementById('downloadLinks').innerHTML = downloadHtml;
+        }
+
+        function resetForm() {
+            document.getElementById('imageInput').value = '';
+            document.getElementById('previewContainer').style.display = 'none';
+            document.getElementById('resultsSection').classList.remove('show');
+            currentImageFile = null;
+            currentResults = null;
+        }
 
     </script>
 </body>
